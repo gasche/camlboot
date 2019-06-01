@@ -1,4 +1,8 @@
-OBJS=interp.cmo
+OBJS=conf.cmo data.cmo envir.cmo \
+	runtime_lib.cmo runtime_stdlib.cmo runtime_compiler.cmo \
+	primitives.cmo \
+	interp.cmo
+SRCS=$(OBJS:.cmo=.ml)
 FLAGS=-g -package unix -package compiler-libs.common -linkpkg
 OCAML=ocamlfind ocamlc
 OCAMLOPT=ocamlfind ocamlopt
@@ -10,7 +14,7 @@ clean:
 	for f in $(wildcard *.cm*) $(wildcard *.o); do rm $$f; done
 
 format:
-	ocamlformat --inplace interp.ml
+	ocamlformat --inplace $(SRCS)
 
 
 .SUFFIXES: .mli .ml .cmi .cmo .cmx
@@ -21,8 +25,14 @@ format:
 .ml.cmo:
 	$(OCAML) $(FLAGS) -c $<
 
+.depend: $(SRCS)
+	ocamldep $(SRCS) > .depend
+
+include .depend
+
 interp: $(OBJS)
-	$(OCAML) $(FLAGS) -linkpkg -o $@ $<
+	echo $(OCAML) $(FLAGS) -linkpkg -o $@ $+
+	$(OCAML) $(FLAGS) -linkpkg -o $@ $+
 
 interpopt: $(OBJS:.cmo=.cmx)
-	$(OCAMLOPT) $(FLAGS) -linkpkg -o $@ $<
+	$(OCAMLOPT) $(FLAGS) -linkpkg -o $@ $+

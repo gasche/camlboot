@@ -38,3 +38,15 @@ interp: $(OBJS)
 
 interpopt: $(OBJS:.cmo=.cmx)
 	$(OCAMLOPT) $(FLAGS) -linkpkg -o $@ $+
+
+.PHONY: run
+
+run: interpopt
+# we defined a symbolic link ./ocaml-src to point to the compiler sources,
+# at a version copmatible with the OCAMLINTERP_STDLIB_PATH version.
+	env \
+	  OCAMLRUNPARAM=b \
+	  OCAMLINTERP_DEBUG=true \
+	  OCAMLINTERP_STDLIB_PATH=$(shell ocamlc -where) \
+	  OCAMLINTERP_SRC_PATH=./ocaml-src \
+	  ./interpopt

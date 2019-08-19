@@ -56,3 +56,6 @@ run: interpopt
 	  OCAMLINTERP_SRC_PATH=$(OCAMLINTERP_SRC_PATH) \
 	  OCAMLINTERP_STDLIB_PATH=$(OCAMLINTERP_STDLIB_PATH) \
 	  ./interpopt $(RUNARGS)
+
+test: interpopt
+	cd tests && sh runtests.sh

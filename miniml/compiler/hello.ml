@@ -21,6 +21,7 @@ let print s = caml_ml_output stdout s 0 (caml_ml_bytes_length s)
 let print_int n = print (format_int " %d" n)
 
 let _ = print "Hello, world!\n"
+let () = caml_ml_flush stdout
 
 let _ = print_int (6 * 7)
 let () = print_int (17 + 12)
@@ -72,9 +73,9 @@ let rec go n =
   if n = 0 then () else (print_int n; go (n - 1))
 
 let () = go 10
-let () = caml_ml_flush stdout
 
 let () = print "\nPattern-matching:\n"
+let () = caml_ml_flush stdout
 
 let () =
   print_int (match Null with Null -> 2 | Cons (x, l) -> 3)
@@ -92,6 +93,7 @@ let () =
   print_int (test_function (Cons (3, Null)))
 
 let () = print "\nLists:\n"
+let () = caml_ml_flush stdout
 
 let rec iter f l =
   match l with
@@ -114,6 +116,7 @@ let () = print_list (map (fun x -> x + 1) [1; 2; 3; 4; 5; 6; 7; 8; 9])
 let () = print_list (map (fun (x, y) -> x + y) [(1, 1); (2, 2); (3, 3)])
 
 let () = print "\nArguments:\n"
+let () = caml_ml_flush stdout
 
 let f1 ~x ~y = print_int (x + 2 * y)
 let () = f1 0 1
@@ -132,6 +135,7 @@ let () = f3 () (2, 3) ~z:4
 let () = f3 () ~x:0 (1, 2) ~z:3
 
 let () = print "\nRecords:\n"
+let () = caml_ml_flush stdout
 
 let () =
   let u = { a = 5 ; b = 7 } in
@@ -142,6 +146,7 @@ let () =
   print_int w.a; print_int w.b
 
 let () = print "\nExceptions:\n"
+let () = caml_ml_flush stdout
 
 exception E1
 exception E2 of int
@@ -181,6 +186,7 @@ let () = print " "; show_exn E3
 let () = print " "; show_exn (E4 7)
 
 let () = print "\nopen:\n"
+let () = caml_ml_flush stdout
 
 module M = struct
   let x = 42
@@ -193,6 +199,7 @@ let () =
   print_int (f 42)
 
 let () = print "\nInfix operators treated as sugar:\n"
+let () = caml_ml_flush stdout
 
 let succ n = n + 1
 let ignore_and_print_int () n = print_int n

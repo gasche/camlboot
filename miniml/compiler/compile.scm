@@ -1033,8 +1033,7 @@
         (bytecode-put-u32-le POP)
         (bytecode-put-u32-le 1))))
 
-
-(define (compile-matching env stacksize istail m isexn)
+(define (compile-matching env stacksize istail m)
   (let* ((t (split-pattern-matching env m))
          (consts (car (car t)))
          (blocks (cdr (car t)))
@@ -1043,6 +1042,8 @@
     (if (and (null? consts) (null? blocks))
         (compile-bind-var env stacksize istail (car default) (cdr default))
         (if (or (null? nums) (< (car nums) 0))
+            ; the matched constructors do not carry representation info. from their type declaration
+            ; this typically occurs when matching on exceptions in the (try .. with ...) desugaring
             ; Inefficient compilation using if and Obj.tag
             (let* ((labblock (newlabel))
                    (labdef (newlabel))
@@ -1092,12 +1093,7 @@
               (bytecode-emit-label labdef)
               (if (pair? default)
                   (compile-bind-var-pushed env (+ stacksize 1) istail (car default) (cdr default))
-                  (if isexn
-                      (begin
-                        (bytecode-put-u32-le ACC)
-                        (bytecode-put-u32-le 0)
-                        (bytecode-put-u32-le RERAISE))
-                      (bytecode-put-u32-le STOP)))
+                  (bytecode-put-u32-le STOP))
               (bytecode-emit-label endlab))
             (let* ((numconsts (car nums))
                    (numblocks (cdr nums))
@@ -1107,7 +1103,6 @@
                    (blockslabs (map (lambda (b) (cons (newlabel) b)) blocks))
                    (basepos (+ (bytecode-get-pos) 8))
                    )
-              (assert (not isexn))
               (bytecode-put-u32-le SWITCH)
               (bytecode-put-u16-le numconsts)
               (bytecode-put-u16-le numblocks)
@@ -1295,22 +1290,40 @@
          (let* ((e (car (cdr expr)))
                 (m (car (cdr (cdr expr)))))
            (compile-expr env stacksize #f e)
-           (compile-matching env stacksize istail m #f)
+           (compile-matching env stacksize istail m)
          ))
         ((equal? (car expr) 'ETry)
          (let* ((e (car (cdr expr)))
-                (m (car (cdr (cdr expr))))
+                (m (car (cdr (cdr expr)))))
+           (compile-expr
+            env stacksize istail
+            (list
+             'LCatch e "try#exn"
+             (list
+              'EMatch (mkevar "try#exn")
+              (append
+               m
+               (list (cons (list 'PVar "_")
+                           (list 'LReraise (mkevar "try#exn"))))))))))
+        ((equal? (car expr) 'LCatch)
+         (let* ((body (car (cdr expr)))
+                (exnvar (car (cdr (cdr expr))))
+                (handler (car (cdr (cdr (cdr expr)))))
                 (lab1 (newlabel))
                 (lab2 (newlabel)))
            (bytecode-put-u32-le PUSHTRAP)
            (bytecode-emit-labref lab1)
-           (compile-expr env (+ stacksize 4) #f e)
+           (compile-expr env (+ stacksize 4) #f body)
            (bytecode-put-u32-le POPTRAP)
            (bytecode-put-u32-le BRANCH)
            (bytecode-emit-labref lab2)
            (bytecode-emit-label lab1)
-           (compile-matching env stacksize istail m #t)
+           (compile-bind-var env stacksize istail exnvar handler)
            (bytecode-emit-label lab2)))
+        ((equal? (car expr) 'LReraise)
+         (let ((e (car (cdr expr))))
+           (compile-expr env stacksize #f e)
+           (bytecode-put-u32-le RERAISE)))
         ((equal? (car expr) 'ELet)
          ; HACK: sequential let!
          (let* ((bindings (car (cdr expr)))

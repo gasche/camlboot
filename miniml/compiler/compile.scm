@@ -7,7 +7,7 @@
 (define (mkapp1 fname arg1) (mkapp fname (list arg1)))
 (define (mkapp2 fname arg1 arg2) (mkapp fname (list arg1 arg2)))
 (define (mkapp3 fname arg1 arg2 arg3) (mkapp fname (list arg1 arg2 arg3)))
-
+(define (mkevar s) (list 'EVar (list 'Lident s)))
 
 (define ml-parser
   (lalr-parser
@@ -221,8 +221,8 @@
 
    (labelled_simple_expr
     (simple_expr) : (mknolabelapp $1)
-    (TILDE LIDENT (prec: label_prec)) : (cons (list 'EVar (list 'Lident $2)) (list 'Labelled $2))
-    (QUESTION LIDENT (prec: label_prec)) : (cons (list 'EVar (list 'Lident $2)) (list 'Optional $2))
+    (TILDE LIDENT (prec: label_prec)) : (cons (mkevar $2) (list 'Labelled $2))
+    (QUESTION LIDENT (prec: label_prec)) : (cons (mkevar $2) (list 'Optional $2))
     (TILDE LIDENT COLON simple_expr) : (cons $4 (list 'Labelled $2))
     (QUESTION LIDENT COLON simple_expr) : (cons $4 (list 'Optional $2)))
 
@@ -270,7 +270,7 @@
     (FUNCTION clauses) :
       (list 'ELambda
             (list (mknolabelfun (list 'PVar "arg#function")))
-            (list 'EMatch (list 'EVar (list 'Lident "arg#function")) $2))
+            (list 'EMatch (mkevar "arg#function") $2))
     (LET llet llet_ands IN expr (prec: LET)) : (list 'ELet (cons $2 $3) $5)
     (LET OPEN longident_uident IN expr (prec: LET)) : (list 'ELetOpen $3 $5)
     (expr_no_semi COLONCOLON expr_no_semi) : (list 'EConstr (list 'Lident "Cons") (cons $1 (cons $3 #nil)))
@@ -1497,7 +1497,7 @@
          (nenv (env-with-vars env nvars))
          )
     (assert (> arity 0))
-    (compile-args env stacksize (map (lambda (v) (list 'EVar (list 'Lident v))) fv))
+    (compile-args env stacksize (map mkevar fv))
     (bytecode-put-u32-le BRANCH)
     (bytecode-emit-labref lab1)
     (bytecode-put-u32-le RESTART)
@@ -1528,16 +1528,14 @@
          (def (car (cdr default)))
          (noneline (cons (list 'PConstr (list 'Lident "None") #nil) def))
          (someline (cons (list 'PConstr (list 'Lident "Some") (list name))
-                         (list 'EVar (list 'Lident name))))
-         (match (list 'EMatch (list 'EVar (list 'Lident name)) (list noneline someline))))
+                         (mkevar name)))
+         (match (list 'EMatch (mkevar name) (list noneline someline))))
     (list 'ELet (list (cons (list 'PVar name) match)) body)))
 
 (define (compile-arg-pat pat name body)
   (if (equal? (car pat) 'PVar)
       body
-      (list 'EMatch
-            (list 'EVar (list 'Lident name))
-            (list (cons pat body)))))
+      (list 'EMatch (mkevar name) (list (cons pat body)))))
 
 (define (compile-type env name tdef)
   (cond ((equal? (car tdef) 'ISum)

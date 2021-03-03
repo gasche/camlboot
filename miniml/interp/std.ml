@@ -37,6 +37,7 @@ let pred x = x - 1
 let max_int = (-1) lsr 1
 let min_int = max_int + 1
 
+let not b = if b then false else true
 let min x y = if x <= y then x else y
 let max x y = if x >= y then x else y
 
@@ -58,7 +59,6 @@ module Obj = struct
   external obj : t -> 'a = "%identity"
   external repr : 'a -> t = "%identity"
   external magic : 'a -> 'b = "%identity"
-  external is_block : t -> bool = "caml_obj_is_block"
   external new_block : int -> int -> t = "caml_obj_block"
   external tag : t -> int = "caml_obj_tag"
   external set_tag : t -> int -> unit = "caml_obj_set_tag"
@@ -66,6 +66,7 @@ module Obj = struct
   external field : t -> int -> t = "%obj_field"
   external set_field : t -> int -> t -> unit = "%obj_set_field"
   external is_int : t -> bool = "%obj_is_int"
+  let is_block obj = not (is_int obj)
   let lazy_tag = 246
   let forward_tag = 250
   let string_tag = 252

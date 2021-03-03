@@ -356,7 +356,7 @@ let valid_float_lexem s =
 let string_of_float f = valid_float_lexem (format_float "%.12g" f)
 
 
-module Pervasives = struct
+module Stdlib = struct
   let compare = compare
 end
 

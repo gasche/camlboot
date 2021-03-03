@@ -6,7 +6,7 @@ OCAMLRUN=../../ocaml-src/runtime/ocamlrun
 OCAMLLEX=../../ocaml-src/runtime/ocamlrun ../../ocaml-src/boot/ocamllex
 OCAMLYACC=../../ocaml-src/yacc/ocamlyacc
 
-COMMONOBJS=int32.ml int64.ml nativeint.ml seq.ml char.ml bytes.ml string.ml digest.ml marshal.ml array.ml list.ml stack.ml hashtbl.ml map.ml set.ml buffer.ml format.ml printf.ml arg.ml gc.ml filename.ml lexing.ml parsing.ml
+COMMONOBJS=int32.ml int64.ml nativeint.ml seq.ml char.ml bytes.ml string.ml digest.ml marshal.ml array.ml list.ml stack.ml hashtbl.ml map.ml set.ml buffer.ml format.ml printf.ml arg.ml gc.ml filename.ml lexing.ml parsing.ml printexc.ml
 PARSEOBJS=misc.ml clflags.ml location.ml asttypes.mli warnings.ml syntaxerr.ml longident.ml parsetree.mli docstrings.ml ast_helper.ml parser.ml lexer.ml parse.ml
 INTERPOBJS=$(COMMONOBJS) $(PARSEOBJS) ../../interpreter/conf.ml ../../interpreter/data.ml ../../interpreter/envir.ml ../../interpreter/runtime_lib.ml ../../interpreter/runtime_base.ml ../../interpreter/eval.ml ../../interpreter/runtime_stdlib.ml ../../interpreter/runtime_compiler.ml ../../interpreter/primitives.ml ../../interpreter/interp.ml
 LEXOBJS1=../../ocaml-src/lex/cset.ml ../../ocaml-src/lex/syntax.ml ../../ocaml-src/lex/parser.ml

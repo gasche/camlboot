@@ -7,7 +7,7 @@
 
 (define rec-closure-step 2)
 (define has-custom-fixed #f)
-(define magic "Caml1999X023")
+(define magic "Caml1999X029")
 
 (define error-code-syntax 3)
 
@@ -3187,6 +3187,7 @@
    (('MTypedef tdefs)
     (fold (lambda (tdef env) (compile-type env (car tdef) (cdr tdef))) env tdefs))
    (('MModule name mod)
+    (display (list "compile-module" name))
     (env-replace-module env name (compile-module env mod)))
    (('MModuleType name ())
     env)

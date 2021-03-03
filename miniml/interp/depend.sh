@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 r=$(dirname $0)
 root=$r/../..
-$root/ocaml-src/byterun/ocamlrun $r/makedepend.byte "$@"
+$root/ocaml-src/runtime/ocamlrun $r/makedepend.byte "$@"

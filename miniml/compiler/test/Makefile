@@ -5,14 +5,14 @@ ocamlrun binary compatible with the bytecode produced by the
 compiler.
 
 Running 'make ocamlrun' at the root of this repository will
-populate ../../_boot/byterun with a compatible 'ocamlrun',
+populate ../../_boot/runtime with a compatible 'ocamlrun',
 which is used by default.
 
 A standard way to invoke this testsuite is by using the
 'test-compiler' target of the root makefile.
 endef
 
-OCAMLRUN?=../../../_boot/byterun/ocamlrun
+OCAMLRUN?=../../../_boot/runtime/ocamlrun
 ifeq "$(wildcard $(OCAMLRUN))" ""
 $(error $(ERRMSG))
 endif

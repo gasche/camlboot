@@ -1,14 +1,11 @@
 BOOT=_boot
 OCAMLSRC=ocaml-src
 CONFIG=$(OCAMLSRC)/config/Makefile
-OCAMLRUN=$(OCAMLSRC)/byterun/ocamlrun
+OCAMLRUN=$(OCAMLSRC)/runtime/ocamlrun
 GENERATED=$(OCAMLSRC)/bytecomp/opcodes.ml
 
 $(OCAMLRUN): $(CONFIG)
-	touch $(OCAMLSRC)/byterun/.depend && $(MAKE) -C $(OCAMLSRC)/byterun depend
-	$(MAKE) -C $(OCAMLSRC)/byterun all
-	touch $(OCAMLSRC)/asmrun/.depend && $(MAKE) -C $(OCAMLSRC)/asmrun depend
-	$(MAKE) -C $(OCAMLSRC)/asmrun all
+	$(MAKE) -C $(OCAMLSRC)/runtime all allopt
 
 .PHONY: configure-ocaml
 configure-ocaml:
@@ -26,7 +23,7 @@ ocaml-generated-files: $(OCAMLRUN) lex make_opcodes cvt_emit
 	$(MAKE) -C $(OCAMLSRC) parsing/parser.ml
 	cd $(OCAMLSRC); ../miniml/interp/lex.sh parsing/lexer.mll
 	$(MAKE) -C $(OCAMLSRC) bytecomp/runtimedef.ml
-	miniml/interp/make_opcodes.sh -opcodes < $(OCAMLSRC)/byterun/caml/instruct.h > $(OCAMLSRC)/bytecomp/opcodes.ml
+	miniml/interp/make_opcodes.sh -opcodes < $(OCAMLSRC)/runtime/caml/instruct.h > $(OCAMLSRC)/bytecomp/opcodes.ml
 	$(MAKE) -C $(OCAMLSRC) asmcomp/arch.ml asmcomp/proc.ml asmcomp/selection.ml asmcomp/CSE.ml asmcomp/reload.ml asmcomp/scheduling.ml
 	miniml/interp/cvt_emit.sh < $(OCAMLSRC)/asmcomp/amd64/emit.mlp > $(OCAMLSRC)/asmcomp/emit.ml
 
@@ -68,7 +65,7 @@ $(BOOT)/driver: $(OCAMLSRC)/driver $(OCAMLSRC)/otherlibs/dynlink $(CONFIG) $(GEN
 	grep -v 'REMOVE_ME for ../../debugger/dynlink.ml' \
 	     $(OCAMLSRC)/otherlibs/dynlink/dynlink.ml > $@/compdynlink.mlbyte
 
-$(BOOT)/byterun: $(OCAMLSRC)/byterun $(CONFIG) $(GENERATED)
+$(BOOT)/runtime: $(OCAMLSRC)/runtime $(CONFIG) $(GENERATED)
 	mkdir -p $(BOOT)
 	rm -rf $@
 	cp -r $< $@
@@ -103,12 +100,12 @@ $(BOOT)/stdlib: $(OCAMLSRC)/stdlib $(CONFIG) $(GENERATED) patches/compflags.patc
 	patch $(BOOT)/stdlib/Compflags patches/compflags.patch
 	awk -f $(BOOT)/stdlib/expand_module_aliases.awk < $(BOOT)/stdlib/stdlib.mli > $(BOOT)/stdlib/stdlib.pp.mli
 	awk -f $(BOOT)/stdlib/expand_module_aliases.awk < $(BOOT)/stdlib/stdlib.ml > $(BOOT)/stdlib/stdlib.pp.ml
-	cp $(OCAMLSRC)/asmrun/libasmrun.a $(BOOT)/stdlib/
+	cp $(OCAMLSRC)/runtime/libasmrun.a $(BOOT)/stdlib/
 	cp Makefile.stdlib $(BOOT)/stdlib/Makefile
 
 COPY_TARGETS=\
 	$(BOOT)/bytecomp \
-	$(BOOT)/byterun \
+	$(BOOT)/runtime \
 	$(BOOT)/driver \
 	$(BOOT)/parsing \
 	$(BOOT)/stdlib \
@@ -138,16 +135,16 @@ $(BOOT)/ocamlc: copy makedepend
 fullboot:
 	cp $(BOOT)/ocamlc $(OCAMLSRC)/boot/
 	cp miniml/interp/lex.byte $(OCAMLSRC)/boot/ocamllex
-	cp $(OCAMLSRC)/byterun/ocamlrun $(OCAMLSRC)/boot/ocamlrun$(EXE)
+	cp $(OCAMLSRC)/runtime/ocamlrun $(OCAMLSRC)/boot/ocamlrun$(EXE)
 	touch $(OCAMLSRC)/stdlib/.depend && ./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/stdlib CAMLDEP="../boot/ocamlc -depend" depend
-	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/stdlib COMPILER="" CAMLC="../boot/ocamlc -use-prims ../byterun/primitives" all
+	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/stdlib COMPILER="" CAMLC="../boot/ocamlc -use-prims ../runtime/primitives" all
 	cd $(OCAMLSRC)/stdlib; cp stdlib.cma std_exit.cmo *.cmi camlheader ../boot
-	cd $(OCAMLSRC)/boot; ln -sf ../byterun/libcamlrun.a .
-	touch $(OCAMLSRC)/tools/.depend &&  ./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/tools CAMLC="../boot/ocamlc -nostdlib -I ../boot -use-prims ../byterun/primitives -I .." make_opcodes cvt_emit
+	cd $(OCAMLSRC)/boot; ln -sf ../runtime/libcamlrun.a .
+	touch $(OCAMLSRC)/tools/.depend &&  ./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/tools CAMLC="../boot/ocamlc -nostdlib -I ../boot -use-prims ../runtime/primitives -I .." make_opcodes cvt_emit
 	touch $(OCAMLSRC)/lex/.depend && ./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/lex CAMLDEP="../boot/ocamlc -depend" depend
 	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC) CAMLDEP="boot/ocamlc -depend" depend
-	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC) CAMLC="boot/ocamlc -nostdlib -I boot -use-prims byterun/primitives" ocamlc
-	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/lex CAMLC="../boot/ocamlc -strict-sequence -nostdlib -I ../boot -use-prims ../byterun/primitives" all
+	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC) CAMLC="boot/ocamlc -nostdlib -I boot -use-prims runtime/primitives" ocamlc
+	./timed.sh $(MAKE) $(MAKEFLAGS) -C $(OCAMLSRC)/lex CAMLC="../boot/ocamlc -strict-sequence -nostdlib -I ../boot -use-prims ../runtime/primitives" all
 
 .PHONY: test-compiler
 test-compiler: $(OCAMLRUN)

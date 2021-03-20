@@ -1073,6 +1073,9 @@
      (fits (lambda (nbits n)
        (and (>= n (-(ash 1 (- nbits 1))))
             (< n (ash 1 (- nbits 1))))))
+     (alert-32bit-overflow (lambda (kind value)
+        (display (list "Warning: " kind " too large for int32 systems: " value))
+        (newline)))
      (count
       (match-lambda
            (('Integer n)
@@ -1117,6 +1120,7 @@
                   (bytecode-put-u8 #x2)
                   (bytecode-put-u32 n))
                (else
+                  (alert-32bit-overflow "integer value" n)
                   (bytecode-put-u8 #x3)
                   (bytecode-put-u64 n))))
            (('Int64 n)
@@ -1138,6 +1142,7 @@
                   (bytecode-put-u8 1)
                   (bytecode-put-u32 n))
                (else
+                  (alert-32bit-overflow "native integer value" n)
                   (bytecode-put-u8 2)
                   (bytecode-put-u64 n))))
            (('String s)
@@ -1148,6 +1153,7 @@
                   (bytecode-put-u32 slen))
                (else
                   (bytecode-put-u8 #x15)
+                  (alert-32bit-overflow "string length" slen)
                   (bytecode-put-u64 slen)))
               (bytecode-put-string s)))
            (('Block tag values)
@@ -1160,6 +1166,7 @@
                     (bytecode-put-u8 #x8)
                     (bytecode-put-u32 hd))
                  (else
+                    (alert-32bit-overflow "block header" hd)
                     (bytecode-put-u8 #x13)
                     (bytecode-put-u64 hd)))
                 (for-each emit values)))
@@ -1179,6 +1186,8 @@
            (bytecode-put-u32 size64)
         )
         (else
+           (alert-32bit-overflow "serialized value"
+             (list (list "len" len) (list "size32" size32) (list "size64" size64)))
            (bytecode-put-u32 #x8495A6BF) ; Intext_magic_number_big
            (bytecode-put-u32 0)          ; Unused
            (bytecode-put-u64 len)
